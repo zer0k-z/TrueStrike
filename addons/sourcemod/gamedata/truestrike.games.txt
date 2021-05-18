@@ -1,0 +1,51 @@
+"Games"
+{
+    "csgo"
+    {
+        "Functions"
+		{
+			"GetSpread"
+			{
+				"offset"    "GetSpread"
+				"hooktype"  "entity"
+				"this"      "entity"
+				"return"    "float"
+			}
+            "GetInaccuracy" // Not used, but might be useful later
+            {
+                "offset"    "GetInaccuracy"
+                "hooktype"  "entity"
+                "this"      "entity"
+                "return"    "float"
+            }
+		}
+        "Offsets"
+        {
+            "GetMaxClip1"
+            {
+                "windows"   "352"
+                "linux"     "358"
+            }
+            "GetSpread"
+            {
+                "windows"   "434"
+                "linux"     "440"
+            }
+            "GetInaccuracy" // Not used, but might be useful later
+            {
+                "windows"   "455"
+                "linux"     "461"
+            }
+        }
+		"Signatures"
+        {
+            "GetSpread"
+            {
+                // Actually useless because you need offset to hook onto entities, but maybe this might be useful later
+                "library"   "server"
+                "windows"   "\x8B\x01\xFF\x90\xE8\x06\x00\x00\xD9\x80\x38\x01\x00\x00"
+                "linux"     "\x55\x89\xE5\x83\xEC\x38\x89\x5D\xF4\x8B\x5D\x08\x89\x75\xF8\x89\x7D\xFC\x8B\x03\x89\x1C\x24\xFF\x90\x00\x07\x00\x00"
+            }
+        }
+    }
+}
