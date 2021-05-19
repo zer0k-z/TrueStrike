@@ -12,7 +12,7 @@ Toggle ammo, recoil, inaccuracy and spread for CS:GO.
 
 3. Recoil: Turn your viewmodel recoil off. This only works for weapon firing, viewmodel changes due to movement, reloading or deploying (R8/Shadow Daggers) are not disabled.   .
 
-4. Bullet prediction: Server usually generates its own seed in order to calculate bullet impact. This option allow client generated bullet predictions to be correct. *However*, this will not work with spread turned off, due to prediction being client sided and spread toggle being server sided.
+4. Bullet prediction: Server usually generates its own seed in order to calculate bullet impact. This option allow client generated bullet predictions to be correct. *However*, this will not work with spread turned off, due to prediction being client sided and spread toggle being server sided. Using cl_predict 0 disables client prediction, but this will cause extreme input delay outside of LAN servers.
 
 5. Infinite Ammo: Similar to a client sided ``sv_infinite_ammo``, however ``sv_infinite_ammo 2`` does not take into account cases where you do not have enough bullets in reserve for a full reload. This plugin fixes the problem by always making sure that there is enough bullets to be refilled to maximum.
 
