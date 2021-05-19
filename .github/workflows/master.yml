@@ -71,7 +71,7 @@ jobs:
           tag_name: workflow-build${{ github.run_number }}
           name: Build ${{ steps.commit_info.outputs.sha_short  }}
           files: |
-            bot-gloves.zip
+            truestrike.zip
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
