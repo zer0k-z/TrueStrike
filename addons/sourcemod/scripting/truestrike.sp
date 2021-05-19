@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "TrueStrike",
 	author = "zer0.k",
 	description = "Toggle ammo, recoil, inaccuracy and spread for CS:GO",
-	version = "1.0",
+	version = "1.1",
 	url = "https://github.com/zer0k-z/TrueStrike"
 };
 
@@ -81,6 +81,7 @@ public void OnPluginStart()
 		HookClients();
 	}
 	HookConVars();
+	UnsetReplicatedConVars();
 }
 
 public void OnConfigsExecuted()
@@ -99,6 +100,7 @@ public void OnPluginEnd()
 	}
 	UnhookConVars();
 	UntweakConVars();
+	SetReplicatedConVars();
 }
 // ====================
 // Client Events
@@ -255,6 +257,37 @@ void UnreplicateConVars(int client)
 	IntToString(gI_sv_infinite_ammo_default, buffer, sizeof(buffer));
 	gCV_sv_infinite_ammo.ReplicateToClient(client, buffer);
 }
+
+void UnsetReplicatedConVars()
+{
+	UnsetReplicatedConVar(gCV_weapon_recoil_scale);
+	UnsetReplicatedConVar(gCV_weapon_recoil_view_punch_extra);
+	UnsetReplicatedConVar(gCV_weapon_accuracy_nospread);
+	UnsetReplicatedConVar(gCV_sv_infinite_ammo);
+}
+
+void UnsetReplicatedConVar(ConVar convar)
+{
+	int flags = convar.Flags;
+	flags &= ~FCVAR_REPLICATED;
+	convar.Flags = flags;
+}
+
+void SetReplicatedConVars()
+{
+	SetReplicatedConVar(gCV_weapon_recoil_scale);
+	SetReplicatedConVar(gCV_weapon_recoil_view_punch_extra);
+	SetReplicatedConVar(gCV_weapon_accuracy_nospread);
+	SetReplicatedConVar(gCV_sv_infinite_ammo);
+}
+
+void SetReplicatedConVar(ConVar convar)
+{
+	int flags = convar.Flags;
+	flags |= FCVAR_REPLICATED;
+	convar.Flags = flags;
+}
+
 // ====================
 // Hooks & Callbacks
 // ====================
