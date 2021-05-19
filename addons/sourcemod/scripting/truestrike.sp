@@ -23,16 +23,20 @@ Handle gH_TrueStrikeCookie;
 
 bool gB_DisableRecoil[MAXPLAYERS + 1];
 ConVar gCV_weapon_recoil_scale;
+float gF_weapon_recoil_scale_default;
 ConVar gCV_weapon_recoil_view_punch_extra;
+float gF_weapon_recoil_view_punch_extra_default;
 Handle gH_RecoilCookie;
 
 bool gB_DisableInaccuracy[MAXPLAYERS + 1];
 // DynamicHook gH_GetInaccuracyHook;
 ConVar gCV_weapon_accuracy_nospread;
+bool gB_weapon_accuracy_nospread_default;
 Handle gH_InaccuracyCookie;
 
 bool gB_UseClientSeed[MAXPLAYERS + 1];
 ConVar gCV_sv_usercmd_custom_random_seed;
+bool gB_sv_usercmd_custom_random_seed_default;
 Handle gH_SeedCookie;
 
 bool gB_DisableSpread[MAXPLAYERS + 1];
@@ -40,6 +44,8 @@ DynamicHook gH_GetSpreadHook;
 Handle gH_SpreadCookie;
 
 int gI_EnableInfiniteAmmo[MAXPLAYERS + 1];
+ConVar gCV_sv_infinite_ammo;
+int gI_sv_infinite_ammo_default;
 Handle gH_SDKCall_GetMaxClip1;
 Handle gH_AmmoCookie;
 
@@ -56,6 +62,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+	CreateConVars();
 	RegisterCookies();
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -66,19 +73,37 @@ public void OnPluginStart()
 		OnClientCookiesCached(i);
 	}
 
-	HookEvents();
-	CreateConVars();
+	HookEvents();	
 	RegConsoleCmd("sm_truestrike", CommandMenuTrueStrike);
 	if (gB_LateLoaded)
 	{
 		HookWeaponEntities();
 		HookClients();
 	}
+	HookConVars();
 }
 
+public void OnConfigsExecuted()
+{
+	UpdateServerConVars();
+}
+
+public void OnPluginEnd()
+{
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && !IsFakeClient(i))
+		{
+			UnreplicateConVars(i);
+		}		
+	}
+	UnhookConVars();
+	UntweakConVars();
+}
 // ====================
 // Client Events
 // ====================
+
 public void OnClientPutInServer(int client)
 {
 	HookClient(client);
@@ -86,15 +111,20 @@ public void OnClientPutInServer(int client)
 
 public void SDKHook_OnClientPreThink(int client)
 {
+	// Cvar changes in here should not be hooked
+	UnhookConVars();
 	if (IsPlayerAlive(client))
-	{
-		gCV_weapon_recoil_scale.FloatValue = gB_DisableRecoil[client] && gB_EnableTrueStrike[client] ? 0.0 : 2.0;
-		gCV_weapon_recoil_view_punch_extra.FloatValue = gB_DisableRecoil[client] && gB_EnableTrueStrike[client] ? 0.0 : 0.055;
-
-		gCV_weapon_accuracy_nospread.IntValue = gB_DisableInaccuracy[client] && gB_EnableTrueStrike[client] ? 1 : 0;
-
-		gCV_sv_usercmd_custom_random_seed.IntValue = gB_UseClientSeed[client] && gB_EnableTrueStrike[client] ? 0 : 1;
+	{	
+		if (gB_EnableTrueStrike[client])
+		{
+			TweakConVars(client);
+		}
+		else
+		{
+			UntweakConVars();
+		}
 	}
+	HookConVars();
 }
 
 public void OnClientCookiesCached(int client)
@@ -106,6 +136,7 @@ public void OnClientCookiesCached(int client)
 	gB_UseClientSeed[client] = !!LoadCookie(client, gH_SeedCookie);
 	gB_DisableSpread[client] = !!LoadCookie(client, gH_SpreadCookie);
 }
+
 // ====================
 // Entity Events
 // ====================
@@ -124,6 +155,60 @@ void CreateConVars()
 	gCV_weapon_recoil_view_punch_extra = FindConVar("weapon_recoil_view_punch_extra");
 	gCV_weapon_accuracy_nospread = FindConVar("weapon_accuracy_nospread");
 	gCV_sv_usercmd_custom_random_seed = FindConVar("sv_usercmd_custom_random_seed");
+	gCV_sv_infinite_ammo = FindConVar("sv_infinite_ammo");
+}
+
+void UpdateServerConVars()
+{
+	gF_weapon_recoil_scale_default = gCV_weapon_recoil_scale.FloatValue;
+	gF_weapon_recoil_view_punch_extra_default = gCV_weapon_recoil_view_punch_extra.FloatValue;
+	gB_weapon_accuracy_nospread_default = gCV_weapon_accuracy_nospread.BoolValue;
+	gB_sv_usercmd_custom_random_seed_default = gCV_sv_usercmd_custom_random_seed.BoolValue;
+	gI_sv_infinite_ammo_default = gCV_sv_infinite_ammo.IntValue;
+}
+
+void HookConVars()
+{
+	HookConVarChange(gCV_weapon_recoil_scale, OnConVarChanged);
+	HookConVarChange(gCV_weapon_recoil_view_punch_extra, OnConVarChanged);
+	HookConVarChange(gCV_weapon_accuracy_nospread, OnConVarChanged);
+	HookConVarChange(gCV_sv_usercmd_custom_random_seed, OnConVarChanged);
+	HookConVarChange(gCV_sv_infinite_ammo, OnConVarChanged);
+}
+
+void UnhookConVars()
+{
+	UnhookConVarChange(gCV_weapon_recoil_scale, OnConVarChanged);
+	UnhookConVarChange(gCV_weapon_recoil_view_punch_extra, OnConVarChanged);
+	UnhookConVarChange(gCV_weapon_accuracy_nospread, OnConVarChanged);
+	UnhookConVarChange(gCV_sv_usercmd_custom_random_seed, OnConVarChanged);
+	UnhookConVarChange(gCV_sv_infinite_ammo, OnConVarChanged);
+}
+
+public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	char buffer[64];
+	convar.GetString(buffer, sizeof(buffer));
+	if (StrEqual(buffer, "weapon_recoil_scale"))
+	{
+		gF_weapon_recoil_scale_default = gCV_weapon_recoil_scale.FloatValue;
+	}
+	else if (StrEqual(buffer, "weapon_recoil_view_punch_extra"))
+	{
+		gF_weapon_recoil_view_punch_extra_default = gCV_weapon_recoil_view_punch_extra.FloatValue;
+	}
+	else if (StrEqual(buffer, "weapon_accuracy_nospread"))
+	{
+		gCV_weapon_accuracy_nospread = FindConVar("weapon_accuracy_nospread");
+	}
+	else if (StrEqual(buffer, "sv_usercmd_custom_random_seed"))
+	{
+		gCV_sv_usercmd_custom_random_seed = FindConVar("sv_usercmd_custom_random_seed");
+	}
+	else if (StrEqual(buffer, "sv_infinite_ammo"))
+	{
+		gI_sv_infinite_ammo_default = gCV_sv_infinite_ammo.IntValue;
+	}
 }
 
 void ReplicateConVars(int client)
@@ -131,8 +216,45 @@ void ReplicateConVars(int client)
 	gCV_weapon_recoil_scale.ReplicateToClient(client, gB_DisableRecoil[client] ? "0.0" : "2.0");
 	gCV_weapon_recoil_view_punch_extra.ReplicateToClient(client, gB_DisableRecoil[client] ? "0.0" : "0.055");
 	gCV_weapon_accuracy_nospread.ReplicateToClient(client, gB_DisableInaccuracy[client] ? "1" : "0");
+	gCV_sv_infinite_ammo.ReplicateToClient(client, gI_EnableInfiniteAmmo[client] == 2 ? "2" : gI_EnableInfiniteAmmo[client] ? "1" : "0");
 }
 
+void TweakConVars(int client)
+{
+	gCV_weapon_recoil_scale.FloatValue = gB_DisableRecoil[client] ? 0.0 : 2.0;
+	gCV_weapon_recoil_view_punch_extra.FloatValue = gB_DisableRecoil[client] ? 0.0 : 0.055;
+
+	gCV_weapon_accuracy_nospread.IntValue = gB_DisableInaccuracy[client];
+
+	gCV_sv_usercmd_custom_random_seed.IntValue = !gB_UseClientSeed[client];
+
+	gCV_sv_infinite_ammo.IntValue = gI_EnableInfiniteAmmo[client];
+}
+
+void UntweakConVars()
+{
+	gCV_weapon_recoil_scale.FloatValue = gF_weapon_recoil_scale_default;
+	gCV_weapon_recoil_view_punch_extra.FloatValue = gF_weapon_recoil_view_punch_extra_default;
+
+	gCV_weapon_accuracy_nospread.IntValue = gB_weapon_accuracy_nospread_default;
+
+	gCV_sv_usercmd_custom_random_seed.IntValue = gB_sv_usercmd_custom_random_seed_default;
+
+	gCV_sv_infinite_ammo.IntValue = gI_sv_infinite_ammo_default;
+}
+
+void UnreplicateConVars(int client)
+{
+	char buffer[32];
+	FloatToString(gF_weapon_recoil_scale_default, buffer, sizeof(buffer));
+	gCV_weapon_recoil_scale.ReplicateToClient(client, buffer);
+	FloatToString(gF_weapon_recoil_view_punch_extra_default, buffer, sizeof(buffer));
+	gCV_weapon_recoil_view_punch_extra.ReplicateToClient(client, buffer);
+	IntToString(gB_weapon_accuracy_nospread_default, buffer, sizeof(buffer));
+	gCV_weapon_accuracy_nospread.ReplicateToClient(client, buffer);
+	IntToString(gI_sv_infinite_ammo_default, buffer, sizeof(buffer));
+	gCV_sv_infinite_ammo.ReplicateToClient(client, buffer);
+}
 // ====================
 // Hooks & Callbacks
 // ====================
@@ -159,7 +281,7 @@ void HookEvents()
     }
 	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_ByValue);
 	gH_SDKCall_GetMaxClip1 = EndPrepSDKCall();
-	
+
 	delete gameData;
 
 	HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Post);
@@ -210,11 +332,16 @@ void HookClient(int client)
 	if (IsClientInGame(client) && !IsFakeClient(client))
 	{
 		SDKHook(client, SDKHook_PreThink, SDKHook_OnClientPreThink);
-		if ((gB_DisableInaccuracy[client] || gB_DisableRecoil[client]) && gB_EnableTrueStrike[client])
+		if ((gB_DisableInaccuracy[client] || gB_DisableRecoil[client] || gI_EnableInfiniteAmmo[client]) && gB_EnableTrueStrike[client])
 		{
 			ReplicateConVars(client);
 		}
+		if (!gB_EnableTrueStrike[client])
+		{
+			UnreplicateConVars(client);
+		}
 	}
+	
 }
 
 public MRESReturn DHooks_OnGetSpread(int pThis, DHookReturn hReturn)
@@ -240,17 +367,9 @@ public Action OnWeaponFire(Handle event, const char[] name, bool dontBroadcast)
 	}
 
 	int weapon_entity_index = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	switch (gI_EnableInfiniteAmmo[client])
+	if (gI_EnableInfiniteAmmo[client])
 	{
-		case 1:
-		{
-			SetMaxClip(weapon_entity_index, 1);
-			SetMinAmmo(weapon_entity_index);
-		}
-		case 2:
-		{
-			SetMinAmmo(weapon_entity_index);
-		}
+		SetMinAmmo(weapon_entity_index);
 	}
 	return Plugin_Handled;
 }
@@ -259,7 +378,7 @@ public Action OnWeaponFire(Handle event, const char[] name, bool dontBroadcast)
 /*
 public MRESReturn DHooks_OnGetInaccuracy(int pThis, DHookReturn hReturn)
 {
-	
+
 	int client = GetEntPropEnt(pThis, Prop_Data, "m_hOwnerEntity");
 	if (gB_DisableInaccuracy[client])
 	{
@@ -280,6 +399,14 @@ void ToggleTrueStrike(int client)
 	gB_EnableTrueStrike[client] = !gB_EnableTrueStrike[client];
 	SetCookie(client, gH_TrueStrikeCookie, gB_EnableTrueStrike[client]);
 	PrintToChat(client, "%sTrueStrike %s.", PREFIX, gB_EnableTrueStrike[client] ? "enabled" : "disabled");
+	if (gB_EnableTrueStrike[client])
+	{
+		ReplicateConVars(client);
+	}
+	else
+	{
+		UnreplicateConVars(client);
+	}
 }
 
 // Seed //
@@ -317,9 +444,8 @@ void ToggleSpread(int client)
 {
 	gB_DisableSpread[client] = !gB_DisableSpread[client];
 	SetCookie(client, gH_SpreadCookie, gB_DisableSpread[client]);
-	PrintToChat(client, "%sSpread %s.", PREFIX, gB_DisableSpread[client] ? "disabled" : "enabled");	
+	PrintToChat(client, "%sSpread %s.", PREFIX, gB_DisableSpread[client] ? "disabled" : "enabled");
 }
-
 
 // Ammo //
 
@@ -354,20 +480,14 @@ int GetMaxClip(int weaponEnt)
 
 void CheckAmmo(int client)
 {
-	switch (gI_EnableInfiniteAmmo[client])
+	if (gI_EnableInfiniteAmmo[client])
 	{
-		case 1:
-		{
-			SetAllMaxClip(client);
-			SetAllMinAmmo(client);
-		}
-		case 2:
-		{
-			SetAllMinAmmo(client);
-		}
+		SetAllMinAmmo(client);
 	}
+
 }
 
+/* No longer used
 void SetAllMaxClip(int client)
 {
 	for (int i = 0; i <= 4; i++)
@@ -386,6 +506,7 @@ void SetMaxClip(int weaponEnt, int add = 0)
 		SetEntProp(weaponEnt, Prop_Send, "m_iClip1", GetMaxClip(weaponEnt) + add);
 	}
 }
+*/
 
 void SetMinAmmo(int weaponEnt)
 {
@@ -397,7 +518,7 @@ void SetMinAmmo(int weaponEnt)
 		{
 			SetEntProp(weaponEnt, Prop_Send, "m_iPrimaryReserveAmmoCount", GetMaxClip(weaponEnt));
 		}
-	} 
+	}
 }
 
 void SetAllMinAmmo(int client)
@@ -496,7 +617,7 @@ void RegisterCookies()
 	gH_InaccuracyCookie = RegClientCookie("TrueStrikeInaccuracy-cookie", "Inaccuracy cookie for TrueStrike", CookieAccess_Private);
 	gH_RecoilCookie = RegClientCookie("TrueStrikeRecoil-cookie", "Recoil cookie for TrueStrike", CookieAccess_Private);
 	gH_SeedCookie = RegClientCookie("TrueStrikeSeed-cookie", "Seed cookie for TrueStrike", CookieAccess_Private);
-	gH_SpreadCookie = RegClientCookie("TrueStrikeSpread-cookie", "Spread cookie for TrueStrike", CookieAccess_Private);	
+	gH_SpreadCookie = RegClientCookie("TrueStrikeSpread-cookie", "Spread cookie for TrueStrike", CookieAccess_Private);
 }
 
 int LoadCookie(int client, Handle cookie)
