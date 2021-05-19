@@ -17,7 +17,7 @@ public Plugin myinfo =
 	url = "https://github.com/zer0k-z/TrueStrike"
 };
 
-#define PREFIX "[\x10TrueStrike\x01] "
+#define PREFIX " \x10TrueStrike \x01| "
 bool gB_EnableTrueStrike[MAXPLAYERS + 1];
 Handle gH_TrueStrikeCookie;
 
@@ -53,6 +53,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	gB_LateLoaded = late;
 	return APLRes_Success;
 }
+
 public void OnPluginStart()
 {
 	RegisterCookies();
@@ -124,6 +125,7 @@ void CreateConVars()
 	gCV_weapon_accuracy_nospread = FindConVar("weapon_accuracy_nospread");
 	gCV_sv_usercmd_custom_random_seed = FindConVar("sv_usercmd_custom_random_seed");
 }
+
 void ReplicateConVars(int client)
 {
 	gCV_weapon_recoil_scale.ReplicateToClient(client, gB_DisableRecoil[client] ? "0.0" : "2.0");
