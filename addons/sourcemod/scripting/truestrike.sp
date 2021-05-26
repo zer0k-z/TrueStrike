@@ -502,6 +502,7 @@ void ToggleAmmo(int client)
 			PrintToChat(client, "%sInfinite ammo disabled.", PREFIX);
 		}
 	}
+	ReplicateConVars(client);
 	SetCookie(client, gH_AmmoCookie, gI_EnableInfiniteAmmo[client]);
 	CheckAmmo(client);
 }
