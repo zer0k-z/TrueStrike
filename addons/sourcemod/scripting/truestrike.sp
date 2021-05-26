@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "TrueStrike",
 	author = "zer0.k",
 	description = "Toggle ammo, recoil, inaccuracy and spread for CS:GO",
-	version = "1.1",
+	version = "1.1.1",
 	url = "https://github.com/zer0k-z/TrueStrike"
 };
 
