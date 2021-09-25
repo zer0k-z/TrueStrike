@@ -23,18 +23,18 @@
         {
             "GetMaxClip1"
             {
-                "windows"   "352"
-                "linux"     "358"
+                "windows"   "353"
+                "linux"     "354"
             }
             "GetSpread"
             {
-                "windows"   "434"
-                "linux"     "440"
+                "windows"   "435"
+                "linux"     "441"
             }
             "GetInaccuracy" // Not used, but might be useful later
             {
-                "windows"   "455"
-                "linux"     "461"
+                "windows"   "456"
+                "linux"     "462"
             }
         }
 		"Signatures"
