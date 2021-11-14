@@ -13,12 +13,13 @@ public Plugin myinfo =
 	name = "TrueStrike",
 	author = "zer0.k",
 	description = "Toggle ammo, recoil, inaccuracy and spread for CS:GO",
-	version = "1.1.3",
+	version = "1.1.4",
 	url = "https://github.com/zer0k-z/TrueStrike"
 };
 
 #define PREFIX " \x10TrueStrike \x01| "
 bool gB_EnableTrueStrike[MAXPLAYERS + 1];
+bool gB_JustTweakedCvars;
 Handle gH_TrueStrikeCookie;
 
 bool gB_DisableRecoil[MAXPLAYERS + 1];
@@ -120,6 +121,7 @@ public void SDKHook_OnClientPreThink(int client)
 		if (gB_EnableTrueStrike[client])
 		{
 			TweakConVars(client);
+			gB_JustTweakedCvars = true;
 		}
 		else
 		{
@@ -139,6 +141,16 @@ public void OnClientCookiesCached(int client)
 	gB_DisableSpread[client] = !!LoadCookie(client, gH_SpreadCookie);
 }
 
+public void OnPlayerRunCmdPost(int client)
+{
+	if (gB_JustTweakedCvars)
+	{
+		UnhookConVars();
+		UntweakConVars();
+		HookConVars();
+		gB_JustTweakedCvars = false;
+	}
+}
 // ====================
 // Entity Events
 // ====================
