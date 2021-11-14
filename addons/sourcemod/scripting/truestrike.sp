@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "TrueStrike",
 	author = "zer0.k",
 	description = "Toggle ammo, recoil, inaccuracy and spread for CS:GO",
-	version = "1.1.2",
+	version = "1.1.3",
 	url = "https://github.com/zer0k-z/TrueStrike"
 };
 
@@ -23,9 +23,9 @@ Handle gH_TrueStrikeCookie;
 
 bool gB_DisableRecoil[MAXPLAYERS + 1];
 ConVar gCV_weapon_recoil_scale;
-float gF_weapon_recoil_scale_default;
+float gF_weapon_recoil_scale_default = 2.0;
 ConVar gCV_weapon_recoil_view_punch_extra;
-float gF_weapon_recoil_view_punch_extra_default;
+float gF_weapon_recoil_view_punch_extra_default = 0.055;
 Handle gH_RecoilCookie;
 
 bool gB_DisableInaccuracy[MAXPLAYERS + 1];
@@ -36,7 +36,7 @@ Handle gH_InaccuracyCookie;
 
 bool gB_UseClientSeed[MAXPLAYERS + 1];
 ConVar gCV_sv_usercmd_custom_random_seed;
-bool gB_sv_usercmd_custom_random_seed_default;
+bool gB_sv_usercmd_custom_random_seed_default = true;
 Handle gH_SeedCookie;
 
 bool gB_DisableSpread[MAXPLAYERS + 1];
@@ -132,7 +132,7 @@ public void SDKHook_OnClientPreThink(int client)
 public void OnClientCookiesCached(int client)
 {
 	gB_EnableTrueStrike[client] = !!LoadCookie(client, gH_TrueStrikeCookie);
-	gI_EnableInfiniteAmmo[client] = LoadCookie(client, gH_AmmoCookie);
+	gI_EnableInfiniteAmmo[client] = !!LoadCookie(client, gH_AmmoCookie);
 	gB_DisableInaccuracy[client] = !!LoadCookie(client, gH_InaccuracyCookie);
 	gB_DisableRecoil[client] = !!LoadCookie(client, gH_RecoilCookie);
 	gB_UseClientSeed[client] = !!LoadCookie(client, gH_SeedCookie);
