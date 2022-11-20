@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "TrueStrike",
 	author = "zer0.k",
 	description = "Toggle ammo, recoil, inaccuracy and spread for CS:GO",
-	version = "1.1.4",
+	version = "1.1.5",
 	url = "https://github.com/zer0k-z/TrueStrike"
 };
 
@@ -134,7 +134,7 @@ public void SDKHook_OnClientPreThink(int client)
 public void OnClientCookiesCached(int client)
 {
 	gB_EnableTrueStrike[client] = !!LoadCookie(client, gH_TrueStrikeCookie);
-	gI_EnableInfiniteAmmo[client] = !!LoadCookie(client, gH_AmmoCookie);
+	gI_EnableInfiniteAmmo[client] = LoadCookie(client, gH_AmmoCookie);
 	gB_DisableInaccuracy[client] = !!LoadCookie(client, gH_InaccuracyCookie);
 	gB_DisableRecoil[client] = !!LoadCookie(client, gH_RecoilCookie);
 	gB_UseClientSeed[client] = !!LoadCookie(client, gH_SeedCookie);
@@ -651,6 +651,7 @@ int Menu_TrueStrike_Handler(Menu menu, MenuAction action, int param1, int param2
 	{
 		delete menu;
 	}
+	return 0;
 }
 
 // ====================
@@ -670,6 +671,7 @@ int LoadCookie(int client, Handle cookie)
 {
 	char buffer[2];
 	GetClientCookie(client, cookie, buffer, sizeof(buffer));
+	PrintToServer("%N: %x - %i", client, cookie, StringToInt(buffer));
 	return StringToInt(buffer);
 }
 
